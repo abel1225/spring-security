@@ -21,14 +21,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.JavaExec;
 
@@ -51,9 +60,9 @@ public class S101Plugin implements Plugin<Project> {
 
 	private void configure(JavaExec exec) {
 		exec.setDescription("Runs Structure101 headless analysis, installing and configuring if necessary");
-		exec.dependsOn("check");
 		Project project = exec.getProject();
 		S101PluginExtension extension = project.getExtensions().getByType(S101PluginExtension.class);
+		addInputsAndOutputs(project, exec);
 		exec
 				.workingDir(extension.getInstallationDirectory())
 				.classpath(new File(extension.getInstallationDirectory().get(), "structure101-java-build.jar"))
@@ -72,6 +81,36 @@ public class S101Plugin implements Plugin<Project> {
 						copyResultsBackToConfigurationDirectory(extension, project);
 					}
 				});
+	}
+
+	private void addInputsAndOutputs(Project project, JavaExec exec) {
+		Pattern buildPathLine = Pattern.compile("<classpathentry kind=\"lib\" path=\"(.*)\" module=\"(.*)\" />");
+		File hsp = new File(new File(project.getBuildDir(), "s101"), "project.java.hsp");
+		if (!hsp.exists()) {
+			return;
+		}
+		Set<Task> task = project.getTasksByName("build", true);
+		Map<String, Task> checkByModuleName = task.stream()
+				.collect(Collectors.toMap((t) -> t.getProject().getName(), Function.identity()));
+		List<String> configLines = readAllLines(hsp);
+		for (String configLine : configLines) {
+			Matcher matcher = buildPathLine.matcher(configLine);
+			if (matcher.find()) {
+				String module = matcher.group(2);
+				Task moduleTask = checkByModuleName.remove(module);
+				if (moduleTask != null) {
+					exec.getInputs().files(moduleTask);
+				}
+			}
+		}
+	}
+
+	private List<String> readAllLines(File file) {
+		try {
+			return Files.readAllLines(file.toPath());
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 
 	private Property<String> computeLabel(S101PluginExtension extension) {
