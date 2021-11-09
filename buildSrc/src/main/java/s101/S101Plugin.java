@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -58,12 +59,18 @@ public class S101Plugin implements Plugin<Project> {
 				.classpath(new File(extension.getInstallationDirectory().get(), "structure101-java-build.jar"))
 				.args(new File(new File(project.getBuildDir(), "s101"), "config.xml"))
 				.systemProperty("s101.label", computeLabel(extension).get())
-				.doFirst((task) -> {
-					installAndConfigureIfNeeded(project);
-					copyConfigurationToBuildDirectory(extension, project);
+				.doFirst(new Action<Task>() {
+					@Override
+					public void execute(Task task) {
+						installAndConfigureIfNeeded(project);
+						copyConfigurationToBuildDirectory(extension, project);
+					}
 				})
-				.doLast((task) -> {
-					copyResultsBackToConfigurationDirectory(extension, project);
+				.doLast(new Action<Task>() {
+					@Override
+					public void execute(Task task) {
+						copyResultsBackToConfigurationDirectory(extension, project);
+					}
 				});
 	}
 
