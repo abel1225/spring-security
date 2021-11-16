@@ -89,7 +89,7 @@ public class S101Plugin implements Plugin<Project> {
 		if (!hsp.exists()) {
 			return;
 		}
-		Set<Task> task = project.getTasksByName("build", true);
+		Set<Task> task = project.getTasksByName("jar", true);
 		Map<String, Task> checkByModuleName = task.stream()
 				.collect(Collectors.toMap((t) -> t.getProject().getName(), Function.identity()));
 		List<String> configLines = readAllLines(hsp);
@@ -99,7 +99,7 @@ public class S101Plugin implements Plugin<Project> {
 				String module = matcher.group(2);
 				Task moduleTask = checkByModuleName.remove(module);
 				if (moduleTask != null) {
-					exec.getInputs().files(moduleTask);
+					exec.getInputs().files(moduleTask.getOutputs());
 				}
 			}
 		}
