@@ -99,7 +99,7 @@ public class S101Plugin implements Plugin<Project> {
 				String module = matcher.group(2);
 				Task moduleTask = checkByModuleName.remove(module);
 				if (moduleTask != null) {
-					exec.getInputs().files(moduleTask.getOutputs());
+					exec.getInputs().files(moduleTask.getOutputs().getFiles());
 				}
 			}
 		}
