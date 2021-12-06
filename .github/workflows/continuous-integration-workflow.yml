@@ -102,7 +102,7 @@ jobs:
           ./gradlew checkSamples --stacktrace
   check_tangles:
     name: Check for Package Tangles
-    needs: [ prerequisites ]
+    needs: [ build_jdk_17 ]
     runs-on: ubuntu-latest
     if: needs.prerequisites.outputs.runjobs
     steps:
