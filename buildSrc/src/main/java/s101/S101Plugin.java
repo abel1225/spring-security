@@ -89,7 +89,7 @@ public class S101Plugin implements Plugin<Project> {
 		if (!hsp.exists()) {
 			return;
 		}
-		Set<Task> task = project.getTasksByName("jar", true);
+		Set<Task> task = project.getTasksByName("compileJava", true);
 		Map<String, Task> checkByModuleName = task.stream()
 				.collect(Collectors.toMap((t) -> t.getProject().getName(), Function.identity()));
 		List<String> configLines = readAllLines(hsp);
